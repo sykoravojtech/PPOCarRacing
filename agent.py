@@ -4,38 +4,43 @@ from tensorflow import keras
 from keras.optimizers import Adam
 import tensorflow_probability as tfp
 from memory import PPOMemory
-from networks import ActorNetwork, CriticNetwork
+from networks import ActorNetwork, CriticNetwork, get_actor, get_critic
 # keras.backend.set_floatx('float32')
 
 class Agent:
     def __init__(self, n_actions, input_dims, gamma=0.99, alpha=0.0003,
                  gae_lambda=0.95, policy_clip=0.2, batch_size=64,
-                 n_epochs=10, chkpt_dir='models/'):
+                 n_epochs=10):
         self.gamma = gamma
         self.policy_clip = policy_clip
         self.n_epochs = n_epochs
         self.gae_lambda = gae_lambda
-        self.chkpt_dir = chkpt_dir
         self.input_dims = input_dims
 
-        self.actor = ActorNetwork(n_actions)
+        # mirrored_strategy = tf.distribute.MirroredStrategy()
+
+        # with mirrored_strategy.scope():
+        # self.actor = get_actor(n_actions)
+        self.actor = ActorNetwork(n_actions) 
         self.actor.compile(optimizer=Adam(learning_rate=alpha))
+        # self.critic = get_critic()
         self.critic = CriticNetwork()
         self.critic.compile(optimizer=Adam(learning_rate=alpha))
+            
         self.memory = PPOMemory(batch_size)
 
     def store_transition(self, state, action, probs, vals, reward, done):
         self.memory.store_memory(state, action, probs, vals, reward, done)
 
-    def save_models(self):
+    def save_models(self, actor_path = 'actor', critic_path = 'critic'):
         print('... saving models ...')
-        self.actor.save(self.chkpt_dir + 'actor')
-        self.critic.save(self.chkpt_dir + 'critic')
+        self.actor.save(actor_path)
+        self.critic.save(critic_path)
 
-    def load_models(self):
+    def load_models(self, actor_path, critic_path):
         print('... loading models ...')
-        self.actor = keras.models.load_model(self.chkpt_dir + 'actor')
-        self.critic = keras.models.load_model(self.chkpt_dir + 'critic')
+        self.actor = keras.models.load_model(actor_path)
+        self.critic = keras.models.load_model(critic_path)
 
     def choose_action(self, observation):
         state = tf.convert_to_tensor([observation])
