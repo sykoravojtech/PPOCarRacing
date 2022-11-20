@@ -1,3 +1,4 @@
-gamma/
-batch_size/
+PPO_marek/gamma/
+PPO_marek/batch_size/
 slurm*
+batch_size/
