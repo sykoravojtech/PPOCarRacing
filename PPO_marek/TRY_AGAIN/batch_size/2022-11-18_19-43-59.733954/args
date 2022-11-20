@@ -1,0 +1,21 @@
+{
+  "entropy_coeff": 0.001,
+  "gamma": 0.99,
+  "gae_lambda": 0.95,
+  "learning_rate": 0.005,
+  "lr_discount": 7e-06,
+  "training_episodes": 4000,
+  "steps_per_ep": 1024,
+  "batch_size": 256,
+  "epochs_per_ep": 4,
+  "clip_range": 0.2,
+  "models_dir": "batch_size/2022-11-18_19-43-59.733954",
+  "start_from_ep": 1,
+  "save_every": 2,
+  "seed": null,
+  "threads": 0,
+  "load_model": "",
+  "tensorboard": true,
+  "print_ep_info_freq": 1,
+  "num_envs": 6
+}
