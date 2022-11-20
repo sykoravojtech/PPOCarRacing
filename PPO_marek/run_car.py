@@ -21,7 +21,7 @@ if __name__ == '__main__':
     env = gym.vector.SyncVectorEnv([lambda: single_env])
     ppo = PPO(env.observation_space, env.action_space)
 
-    ppo.load('models/car')
+    ppo.load_w('models/car')
 
     # while True:
 

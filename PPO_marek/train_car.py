@@ -1,15 +1,66 @@
+# Python Libraries
+import os
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")  # Report only TF errors by default
 import gym
 import numpy as np
+import argparse
+import tensorflow as tf
 
-if __name__ == '__main__':
-    from PPO import PPO
-    from wrappers import LuminanceWrapper, StackObservation, normalize_obs, BoundAction
+# My Libraries
+from PPO import PPO
+from wrappers import LuminanceWrapper, StackObservation, normalize_obs, BoundAction
+from parser import create_parser, save_args
+from utils import *
 
-    env = gym.vector.make('CarRacing-v2', num_envs=6,
+def main(env, args: argparse.Namespace) -> None:
+    if args.seed is not None:
+        tf.keras.utils.set_random_seed(args.seed)
+    tf.config.threading.set_inter_op_parallelism_threads(args.threads)
+    tf.config.threading.set_intra_op_parallelism_threads(args.threads)
+    
+    # create a specific folder for this training (usefull for parallel execution)
+    args.models_dir = create_dir_for_curr_runtime(args.models_dir)
+
+    ppo = PPO(observation_space = env.observation_space, 
+              action_space = env.action_space, 
+              entropy_coeff = args.entropy_coeff,
+              gamma = args.gamma,
+              gae_lambda = args.gae_lambda,
+              learning_rate = args.learning_rate)
+    
+    if args.load_model != "":
+        ppo.load_w(args.load_model)
+    
+    def lr_schedule(x): return x * args.lr_discount
+    
+    logger = get_logger(args.models_dir, args.tensorboard)
+    with logger.as_default():
+        tf.summary.text('arguments', str(args.__dict__), step=1)
+        
+    save_args(args, os.path.join(args.models_dir, 'args'))
+    save_model_summary(args.models_dir, ppo.get_model())
+    
+    ppo.train(env = env,
+              args = args, 
+              nepisodes = args.training_episodes, 
+              steps_per_ep = args.steps_per_ep, 
+              mb_size = args.batch_size, 
+              epochs_per_ep = args.epochs_per_ep,
+              lr = lr_schedule, 
+              clip_range = args.clip_range, 
+              model_dir = args.models_dir, 
+              start_from_ep = args.start_from_ep, 
+              save_interval = args.save_every,
+              print_freq = args.print_ep_info_freq,
+              logger = logger)
+
+
+if __name__ == '__main__':    
+    args = create_parser().parse_args([] if "__file__" not in globals() else None)
+
+    env = gym.vector.make('CarRacing-v2', num_envs=args.num_envs,
                           wrappers=[normalize_obs, BoundAction])
-    ppo = PPO(env.observation_space, env.action_space, entropy_coeff=0.001)
-    # ppo.load('models/car')
-    def lr_schedule(x): return x * 7e-4
-    # lr_schedule = lambda x: 0.0
-    ppo.train(env, nepisodes=2000, steps_per_ep=2048, mb_size=512, epochs_per_ep=4,
-              lr=lr_schedule, clip_range=0.2, model_name='Vmodels/car', start_from_ep=0)
+    
+    print_info(env, args)
+    
+    main(env, args)
