@@ -32,6 +32,8 @@ class PPO:
         self.gae_lambda = gae_lambda
         self.model: Model = None
         self.action_space = action_space
+        
+        print(f"{observation_space = }\n{action_space = }")
 
         if len(observation_space.shape) == 2:
             print("... building mlp model ...")
@@ -75,7 +77,7 @@ class PPO:
 
         self.optim = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         self.entropy_coeff = entropy_coeff
-        self.model.summary()
+        # self.model.summary()
         
     def get_model(self):
         return self.model
@@ -92,14 +94,7 @@ class PPO:
         return value
 
     def get_pd(self, obs):
-        """return Probability Distribution
-
-        Args:
-            obs (_type_): oservation of the gym state
-
-        Raises:
-            NotImplementedError: Has to be overwritten
-        """
+        """return Probability Distribution"""
         raise NotImplementedError()
 
     def get_categorical_pd(self, obs):

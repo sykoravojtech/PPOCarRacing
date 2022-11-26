@@ -14,7 +14,7 @@ def create_parser():
     parser.add_argument("-b", "--batch_size", default=512, type=int, help="Batch/minibatch size")
     parser.add_argument("-epochs", "--epochs_per_ep", default=4, type=int, help="Number of epochs per episode")
     parser.add_argument("-clip", "--clip_range", default=0.2, type=float, help="Clip range (1-clip, 1+clip)")
-    parser.add_argument("-dir", "--models_dir", default="tensor1/", help="Directory in which all models are saved")
+    parser.add_argument("-dir", "--models_dir", default="models/", help="Directory in which all models are saved")
     parser.add_argument("--start_from_ep", default=1, type=int, help="Starting episode number")
     parser.add_argument("--save_every", default=10, type=int, help="Save the model every N episodes. Make a checkpoint.")
     parser.add_argument("--seed", default=None, type=int, help="Random seed.")
