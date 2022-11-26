@@ -40,8 +40,8 @@ if __name__ == '__main__':
                   n_epochs = args.n_epochs
                   )
     
-    # print("loading models")
-    # agent.load_models()
+    print("loading models")
+    agent.load_models(os.path.join("bestmodel", "actor"), os.path.join("bestmodel", "critic"))
     
     # best_score = env.reward_range[0]
     return_history = []
@@ -49,8 +49,8 @@ if __name__ == '__main__':
     learn_iters = 0
     avg_score = 0
     n_steps = 0
-
-    for episode in range(1, args.train_episodes + 1):
+    
+    for episode in range(1, 10):
         observation, _ = env.reset()
         done = False
         score = 0
@@ -60,23 +60,41 @@ if __name__ == '__main__':
             done  = done or truncated
             n_steps += 1
             score += reward
-            agent.store_transition(observation, action,
-                                   prob, val, reward, done)
-            if n_steps % args.learn_every == 0:
-                agent.learn()
-                learn_iters += 1
             observation = observation_
         return_history.append(score)
         avg_score = np.mean(return_history[-100:])
-
-        # if avg_score > best_score:
-        #     best_score = avg_score
-        #     agent.save_models()
-
         print('ep=', episode, ', ret=%.1f' % score, ', avg ret=%.1f' % avg_score,
               ', n_steps=', n_steps, ', learn_n=', learn_iters)
+
+
+
+    # for episode in range(1, args.train_episodes + 1):
+    #     observation, _ = env.reset()
+    #     done = False
+    #     score = 0
+    #     while not done:
+    #         action, prob, val = agent.choose_action(observation.astype(np.int32))
+    #         observation_, reward, done, truncated, info = env.step(action)
+    #         done  = done or truncated
+    #         n_steps += 1
+    #         score += reward
+    #         agent.store_transition(observation, action,
+    #                                prob, val, reward, done)
+    #         if n_steps % args.learn_every == 0:
+    #             agent.learn()
+    #             learn_iters += 1
+    #         observation = observation_
+    #     return_history.append(score)
+    #     avg_score = np.mean(return_history[-100:])
+
+    #     # if avg_score > best_score:
+    #     #     best_score = avg_score
+    #     #     agent.save_models()
+
+    #     print('ep=', episode, ', ret=%.1f' % score, ', avg ret=%.1f' % avg_score,
+    #           ', n_steps=', n_steps, ', learn_n=', learn_iters)
         
-        if episode % args.save_every == 0:
-            save_all(return_history, agent, args, episode)
+    #     if episode % args.save_every == 0:
+    #         save_all(return_history, agent, args, episode)
         
     save_all(return_history, agent, args)
