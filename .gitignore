@@ -1,3 +1,4 @@
 PPO_marek/gamma/
 PPO_marek/batch_size/
 slurm*
+PPO_marek/__pycache__/

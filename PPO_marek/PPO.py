@@ -305,8 +305,8 @@ def build_conv_model(state_size) -> Model:
     h2 = Conv2D(64, 4, 2, activation='relu')(h1)
     h3 = Conv2D(64, 4, 2, activation='relu')(h2)
     flat = Flatten()(h3)
-    latent = Dense(512, activation='relu')(flat)
+    latent = Dense(512, activation='relu')(flat) # this will be expanded to get beta distribution for actors decision
     # pi = Dense(actions_size, activation='linear')(latent)
-    value = Dense(1, activation='linear')(latent)
+    value = Dense(1, activation='linear')(latent) # critic
 
     return Model(input, [value, latent])
