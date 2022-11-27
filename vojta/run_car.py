@@ -7,6 +7,7 @@ import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 from PPO import PPO
 from wrappers import normalize_obs, BoundAction
+from datetime import datetime
 
 from gym.wrappers.monitoring.video_recorder import VideoRecorder
 
@@ -32,6 +33,8 @@ if __name__ == '__main__':
 
     ppo.load_w('marek_models/car')
     
+    time1 = datetime.now()
+    
     done = False
     obs, _ = env.reset()
     step = 0
@@ -48,3 +51,4 @@ if __name__ == '__main__':
         # print(f"{obs=}")
         step += 1
     print(f"{score = }")
+    print(f"time spent = {datetime.now() - time1}")

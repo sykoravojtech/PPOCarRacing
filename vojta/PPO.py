@@ -29,6 +29,9 @@ class PPO:
         self.gae_lambda = gae_lambda
         self.model: Model = None
         self.action_space = action_space
+        self.optim = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        self.entropy_coeff = entropy_coeff
+        self.get_pd = self.get_normal_pd
         
         print(f"{observation_space = }\n{action_space = }")
 
@@ -38,16 +41,12 @@ class PPO:
         else:
             raise Exception(
                 f'Unsupported observation space shape {observation_space.shape} ... add 1 dimension to mimic vectorenv')
-
-        
-        self.get_pd = self.get_normal_pd
-
-        self.optim = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        self.entropy_coeff = entropy_coeff
-        # self.model.summary()
         
     def get_model(self):
         return self.model
+    
+    def model_summary(self):
+        self.model.summary()
 
     @tf.function
     def act(self, state):
@@ -60,18 +59,7 @@ class PPO:
         pd, value = self.get_pd(state)
         return value
 
-    def get_pd(self, obs):
-        """return Probability Distribution"""
-        raise NotImplementedError()
-
-    def get_categorical_pd(self, obs):
-        value, pi = self.model(obs)
-        pd = distributions.Categorical(logits=pi)
-        return pd, tf.squeeze(value, axis=-1)
-
     def get_normal_pd(self, obs):
-        # value, mean, std = self.model(obs)
-        # pd = distributions.MultivariateNormalDiag(loc=mean, scale_diag=std)
         value, b0, b1 = self.model(obs)
         pd = distributions.Beta(b0, b1)
         pd = distributions.Independent(pd, reinterpreted_batch_ndims=1)
@@ -92,7 +80,7 @@ class PPO:
     def get_loss_value(self, pred_value, returns):
         return tf.reduce_mean((pred_value-returns)**2)
 
-    # @tf.function
+    @tf.function
     def grad(self, obs, clip, returns, values, actions, old_logp):
         epsilon = 1e-8
         adv = returns - values
@@ -253,22 +241,22 @@ class PPO:
         self.model.load_weights(filename)
 
 def build_conv_model(input_shape, action_space) -> Model:
-    input = Input(shape=input_shape)
-    h1 = Conv2D(32, 8, 4, activation='relu')(input)
-    h2 = Conv2D(64, 4, 2, activation='relu')(h1)
-    h3 = Conv2D(64, 4, 2, activation='relu')(h2)
-    flat = Flatten()(h3)
-    latent = Dense(512, activation='relu')(flat) # this will be expanded to get beta distribution for actors decision
-    value = Dense(1, activation='linear')(latent) # critic
+    input = Input(shape=input_shape, name='input_cnn')
+    cnn1 = Conv2D(32, 8, 4, activation='relu', name='conv2d_1')(input)
+    cnn2 = Conv2D(64, 4, 2, activation='relu', name='conv2d_2')(cnn1)
+    cnn3 = Conv2D(64, 4, 2, activation='relu', name='conv2d_3')(cnn2)
+    flat = Flatten(name='flatten')(cnn3)
+    latent = Dense(512, activation='relu', name='dense_1')(flat) # this will be expanded to get beta distribution for actors decision
+    value = Dense(1, activation='linear', name='value_critic')(latent) # critic
     # print(f"{value = }\n{latent = }")
     # value = <KerasTensor: shape=(None, 1) dtype=float32 (created by layer 'dense_1')>
     # latent = <KerasTensor: shape=(None, 512) dtype=float32 (created by layer 'dense')>
     
-    model = Model(input, [value, latent])
+    model = Model(input, [value, latent], name='CNN_model')
     model.summary()
         
     model_input_shape = model.input_shape
-    input_tensor = Input(shape=model_input_shape[1:])
+    input_tensor = Input(shape=model_input_shape[1:], name='input_PPO')
     value, latent = model(input_tensor)
 
     # print(f"{value = }\n{latent = }")
@@ -284,15 +272,14 @@ def build_conv_model(input_shape, action_space) -> Model:
     size = action_space.shape[1]
 
     # for beta distribution
-    b0 = Dense(size, activation='softplus')(latent)
-    b0 = Lambda(lambda x: 1+x)(b0)
+    b0 = Dense(size, activation='softplus', name='dense_b0')(latent)
+    b0 = Lambda(lambda x: 1+x, name='lambda_b0')(b0)
     
     # for beta distribution
-    b1 = Dense(size, activation='softplus')(latent)
-    b1 = Lambda(lambda x: 1+x)(b1)
+    b1 = Dense(size, activation='softplus', name='dense_b1')(latent)
+    b1 = Lambda(lambda x: 1+x, name='lambda_b1')(b1)
     
-    model = Model(input_tensor, [value, b0, b1])
-    
+    model = Model(input_tensor, [value, b0, b1], name='ActorCriticPPO')
     model.summary()
 
     return model

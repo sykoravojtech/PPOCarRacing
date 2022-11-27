@@ -6,6 +6,7 @@ import json
 import tensorflow as tf
 from time import sleep
 import random
+from parser import *
 
 def get_logger(model_dir, tensorboard=False):
     """
@@ -64,7 +65,15 @@ def save_model_summary(model_dir, model):
     filename = os.path.join(model_dir, "model_summary.txt")
     with open(filename,'w') as fh:
         model.summary(print_fn=lambda x: fh.write(x + '\n'))
+        model.get_layer('CNN_model').summary(print_fn=lambda x: fh.write(x + '\n'))
         # model.summary(line_length=80, print_fn=lambda x: fh.write(x + '\n'))
+
+def create_subfolder(models_dir, addon=""):
+    sleep(random.random()) # so that the parallel executions dont save into the same folder
+    models_dir = os.path.join(models_dir, addon)
+    os.makedirs(models_dir)
+    print(f"This runtime saved in {models_dir}")
+    return models_dir
 
 ################ OLD
 
@@ -92,14 +101,6 @@ def graph_make_save(env, args, curr_e, dir):
 #     plt.savefig(figure_file)
 #     plt.clf()
 #     print(f"saving running_avg to {figure_file}")
-    
-def save_args(args, save_path):
-    with open(save_path, 'w') as f:
-        json.dump(args.__dict__, f, indent=2)
-
-def load_args(args, load_path):
-    with open(load_path, 'r') as f:
-        args.__dict__ = json.load(f)
         
 def save_checkpoint(network, target_network, env, args, curr_episode=0):
     ep = str(curr_episode) if curr_episode != 0 else ''

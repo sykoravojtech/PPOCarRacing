@@ -19,7 +19,8 @@ def main(env, args: argparse.Namespace) -> None:
     tf.config.threading.set_intra_op_parallelism_threads(args.threads)
     
     # create a specific folder for this training (usefull for parallel execution)
-    args.models_dir = create_dir_for_curr_runtime(args.models_dir)
+    # args.models_dir = create_dir_for_curr_runtime(args.models_dir)
+    args.models_dir = create_subfolder(args.models_dir, f"g_{args.gamma}")
 
     ppo = PPO(observation_space = env.observation_space, 
               action_space = env.action_space, 
@@ -39,6 +40,8 @@ def main(env, args: argparse.Namespace) -> None:
         
     save_args(args, os.path.join(args.models_dir, 'args'))
     save_model_summary(args.models_dir, ppo.get_model())
+    
+    ppo.model_summary()
     
     ppo.train(env = env,
               args = args, 

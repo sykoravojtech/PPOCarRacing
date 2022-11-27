@@ -2,15 +2,12 @@ import os
 # Report only TF errors by default
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 from collections import defaultdict
-from gym.spaces.multi_discrete import MultiDiscrete
-from gym.spaces import Discrete, Box
+from gym.spaces import Box
 import numpy as np
 from tensorflow_probability import distributions
-import tensorflow_probability as tfp
-from keras.optimizers import Adam, RMSprop
-from keras.models import Sequential, Model
-from keras.layers import Dense, Dropout, Conv2D, Flatten, Input, Lambda
 from tensorflow import keras
+from keras.models import Model
+from keras.layers import Dense, Conv2D, Flatten, Input, Lambda
 import tensorflow as tf
 
 from utils import save_pltgraph
@@ -32,55 +29,25 @@ class PPO:
         self.gae_lambda = gae_lambda
         self.model: Model = None
         self.action_space = action_space
+        self.optim = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        self.entropy_coeff = entropy_coeff
+        self.get_pd = self.get_normal_pd
         
         print(f"{observation_space = }\n{action_space = }")
 
-        if len(observation_space.shape) == 2:
-            print("... building mlp model ...")
-            model = build_mlp_model(
-                observation_space.shape[1:])
-
-        elif len(observation_space.shape) == 4:
+        if len(observation_space.shape) == 4:
             print("... building conv model ...")
-            model = build_conv_model(
-                observation_space.shape[1:])
+            self.model = build_conv_model(observation_space.shape[1:], action_space) # passing just the pure one observation shape
         else:
             raise Exception(
-                f'Unsupported observation space shape {observation_space.shape}')
-
-        model_input_shape = model.input_shape
-        input_tensor = Input(shape=model_input_shape[1:])
-        value, latent = model(input_tensor)
-
-        if issubclass(type(action_space), MultiDiscrete):
-            print("... is MultiDiscrete ...")
-            pi = Dense(action_space.nvec[0])(latent)
-            self.model = Model(input_tensor, [value, pi])
-            self.get_pd = self.get_categorical_pd
-
-        elif issubclass(type(action_space), Box):
-            print("... is Box ...")
-            size = action_space.shape[1]
-            # mean = Dense(size)(latent)
-            # std = Dense(size, activation='exponential')(latent)
-            # self.model = Model(input_tensor, [value, mean, std])
-            b0 = Dense(size, activation='softplus')(latent)
-            b1 = Dense(size, activation='softplus')(latent)
-            b0 = Lambda(lambda x: 1+x)(b0)
-            b1 = Lambda(lambda x: 1+x)(b1)
-            self.model = Model(input_tensor, [value, b0, b1])
-            self.get_pd = self.get_normal_pd
-
-        else:
-            raise Exception(
-                f'Unsupported action space {type(action_space)}')
-
-        self.optim = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        self.entropy_coeff = entropy_coeff
-        # self.model.summary()
+                f'Unsupported observation space shape {observation_space.shape} ... add 1 dimension to mimic vectorenv')
         
     def get_model(self):
         return self.model
+    
+    def model_summary(self):
+        self.model.summary()
+        self.model.get_layer("CNN_model").summary()
 
     @tf.function
     def act(self, state):
@@ -93,18 +60,7 @@ class PPO:
         pd, value = self.get_pd(state)
         return value
 
-    def get_pd(self, obs):
-        """return Probability Distribution"""
-        raise NotImplementedError()
-
-    def get_categorical_pd(self, obs):
-        value, pi = self.model(obs)
-        pd = distributions.Categorical(logits=pi)
-        return pd, tf.squeeze(value, axis=-1)
-
     def get_normal_pd(self, obs):
-        # value, mean, std = self.model(obs)
-        # pd = distributions.MultivariateNormalDiag(loc=mean, scale_diag=std)
         value, b0, b1 = self.model(obs)
         pd = distributions.Beta(b0, b1)
         pd = distributions.Independent(pd, reinterpreted_batch_ndims=1)
@@ -125,7 +81,7 @@ class PPO:
     def get_loss_value(self, pred_value, returns):
         return tf.reduce_mean((pred_value-returns)**2)
 
-    # @tf.function
+    # @tf.function # gives an error
     def grad(self, obs, clip, returns, values, actions, old_logp):
         epsilon = 1e-8
         adv = returns - values
@@ -285,28 +241,44 @@ class PPO:
     def load_w(self, filename='model'):
         self.model.load_weights(filename)
 
+def build_conv_model(input_shape, action_space) -> Model:
+    input = Input(shape=input_shape, name='input_cnn')
+    cnn1 = Conv2D(32, 8, 4, activation='relu', name='conv2D_1')(input)
+    cnn2 = Conv2D(64, 4, 2, activation='relu', name='conv2D_2')(cnn1)
+    cnn3 = Conv2D(64, 4, 2, activation='relu', name='conv2D_3')(cnn2)
+    flat = Flatten(name='flatten')(cnn3)
+    latent = Dense(512, activation='relu', name='dense_1')(flat) # this will be expanded to get beta distribution for actors decision
+    value = Dense(1, activation='linear', name='value_critic')(latent) # critic
+    # print(f"{value = }\n{latent = }")
+    # value = <KerasTensor: shape=(None, 1) dtype=float32 (created by layer 'dense_1')>
+    # latent = <KerasTensor: shape=(None, 512) dtype=float32 (created by layer 'dense')>
+    
+    model = Model(input, [value, latent], name='CNN_model')
+        
+    model_input_shape = model.input_shape
+    input_tensor = Input(shape=model_input_shape[1:], name='input_PPO')
+    value, latent = model(input_tensor)
 
-def build_mlp_model(state_size) -> Model:
-    input = Input(shape=state_size)
+    # print(f"{value = }\n{latent = }")
+    # value = <KerasTensor: shape=(None, 1) dtype=float32 (created by layer 'model')>
+    # latent = <KerasTensor: shape=(None, 512) dtype=float32 (created by layer 'model')>
 
-    h1 = Dense(256, activation='relu')(input)
-    # model.add(Dropout(0.5))
-    latent = Dense(256, activation='relu')(h1)
-    # model.add(Dropout(0.5))
-    value = Dense(1, activation='linear')(latent)
-    # pi = Dense(actions_size, activation='linear')(h2)
+    # print(f"{input_shape=}\n{model_input_shape=}\n{input=}\n{input_tensor=}")
+    # input_shape=(96, 96, 3)
+    # model_input_shape=(None, 96, 96, 3)
+    # input=<KerasTensor: shape=(None, 96, 96, 3) dtype=float32 (created by layer 'input_1')>
+    # input_tensor=<KerasTensor: shape=(None, 96, 96, 3) dtype=float32 (created by layer 'input_2')>
+    
+    size = action_space.shape[1]
 
-    return Model(input, [value, latent])
+    # for beta distribution
+    b0 = Dense(size, activation='softplus', name='dense_b0')(latent)
+    b0 = Lambda(lambda x: 1+x, name='lambda_b0')(b0)
+    
+    # for beta distribution
+    b1 = Dense(size, activation='softplus', name='dense_b1')(latent)
+    b1 = Lambda(lambda x: 1+x, name='lambda_b1')(b1)
+    
+    model = Model(input_tensor, [value, b0, b1], name='ActorCriticPPO')
 
-
-def build_conv_model(state_size) -> Model:
-    input = Input(shape=state_size)
-    h1 = Conv2D(32, 8, 4, activation='relu')(input)
-    h2 = Conv2D(64, 4, 2, activation='relu')(h1)
-    h3 = Conv2D(64, 4, 2, activation='relu')(h2)
-    flat = Flatten()(h3)
-    latent = Dense(512, activation='relu')(flat) # this will be expanded to get beta distribution for actors decision
-    # pi = Dense(actions_size, activation='linear')(latent)
-    value = Dense(1, activation='linear')(latent) # critic
-
-    return Model(input, [value, latent])
+    return model
