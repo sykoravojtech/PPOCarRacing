@@ -1,4 +1,5 @@
-PPO_marek/gamma/
-PPO_marek/batch_size/
+PPO_marek/gamma_old/
+PPO_marek/batch_size_old/
 slurm*
 PPO_marek/__pycache__/
+vojta/
