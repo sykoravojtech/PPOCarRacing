@@ -6,7 +6,7 @@ def create_parser():
     
     parser.add_argument("-entropy", "--entropy_coeff", default=0.001, type=float, help="Entropy coefficient") # 0.0
     parser.add_argument("-g", "--gamma", default=0.99, type=float, help="Discount factor - gamma.")
-    parser.add_argument("--gae_lambda", default=0.95, type=float, help="gae_lambda")
+    parser.add_argument("-gae", "--gae_lambda", default=0.95, type=float, help="gae_lambda")
     parser.add_argument("-lr", "--learning_rate", default=5e-4, type=float, help="Learning rate - alpha.")
     parser.add_argument("--lr_discount", default=7e-6, type=float, help="Learning rate discount factor")
     parser.add_argument("-t", "--training_episodes", default=4000, type=int, help="Training episodes.")
