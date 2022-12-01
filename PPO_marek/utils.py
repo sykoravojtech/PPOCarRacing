@@ -6,7 +6,7 @@ import json
 import tensorflow as tf
 from time import sleep
 import random
-from parser import *
+from my_parser import *
 
 def get_logger(model_dir, tensorboard=False):
     """

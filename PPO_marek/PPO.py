@@ -210,6 +210,7 @@ class PPO:
             mb_logp = np.concatenate(mb_logp, axis=0)
 
             lr_now = lr(1.0 - e/nepisodes)
+            # lr_now lr(1.0)
             self.learn(mb_obs, returns, mb_actions, mb_values, mb_logp,
                        clip_range, lr_now, mb_size, epochs=epochs_per_ep)
             avg_score = np.mean(

@@ -9,7 +9,7 @@ import tensorflow as tf
 # My Libraries
 from PPO import PPO
 from wrappers import LuminanceWrapper, StackObservation, normalize_obs, BoundAction
-from parser import create_parser, save_args
+from my_parser import create_parser, save_args
 from utils import *
 
 def main(env, args: argparse.Namespace) -> None:
@@ -20,7 +20,7 @@ def main(env, args: argparse.Namespace) -> None:
     
     # create a specific folder for this training (usefull for parallel execution)
     # args.models_dir = create_dir_for_curr_runtime(args.models_dir)
-    args.models_dir = create_subfolder(args.models_dir, f"g_{args.gamma}")
+    args.models_dir = create_subfolder(args.models_dir, f"clip_{args.clip_range}")
 
     ppo = PPO(observation_space = env.observation_space, 
               action_space = env.action_space, 
@@ -32,7 +32,9 @@ def main(env, args: argparse.Namespace) -> None:
     if args.load_model != "":
         ppo.load_w(args.load_model)
     
+    # TODO automate this
     def lr_schedule(x): return x * args.lr_discount
+    # def lr_schedule(x): return x
     
     logger = get_logger(args.models_dir, args.tensorboard)
     with logger.as_default():
@@ -41,7 +43,7 @@ def main(env, args: argparse.Namespace) -> None:
     save_args(args, os.path.join(args.models_dir, 'args'))
     save_model_summary(args.models_dir, ppo.get_model())
     
-    ppo.model_summary()
+    # ppo.model_summary()
     
     ppo.train(env = env,
               args = args, 
