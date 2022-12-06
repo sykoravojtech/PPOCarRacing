@@ -244,7 +244,7 @@ class PPO:
 
 def build_conv_model(input_shape, action_space) -> Model:
     input = Input(shape=input_shape, name='input_cnn')
-    cnn1 = Conv2D(32, 8, 4, activation='relu', name='conv2D_1')(input)
+    cnn1 = Conv2D(filters=32, kernel_size=8, strides=4, activation='relu', name='conv2D_1')(input)
     cnn2 = Conv2D(64, 4, 2, activation='relu', name='conv2D_2')(cnn1)
     cnn3 = Conv2D(64, 4, 2, activation='relu', name='conv2D_3')(cnn2)
     flat = Flatten(name='flatten')(cnn3)

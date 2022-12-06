@@ -12,7 +12,7 @@ def create_parser():
     parser.add_argument("-t", "--training_episodes", default=4000, type=int, help="Training episodes.")
     parser.add_argument("-s", "--steps_per_ep", default=1024, type=int, help="Steps per episode - since we have multiple envs we don't end when done")
     parser.add_argument("-b", "--batch_size", default=512, type=int, help="Batch/minibatch size")
-    parser.add_argument("-epochs", "--epochs_per_ep", default=4, type=int, help="Number of epochs per episode")
+    parser.add_argument("-epochs", "--epochs_per_ep", default=5, type=int, help="Number of epochs per episode")
     parser.add_argument("-clip", "--clip_range", default=0.2, type=float, help="Clip range (1-clip, 1+clip)")
     parser.add_argument("-dir", "--models_dir", default="models/", help="Directory in which all models are saved")
     parser.add_argument("--start_from_ep", default=1, type=int, help="Starting episode number")
