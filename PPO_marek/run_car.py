@@ -13,6 +13,8 @@ from gym.wrappers.monitoring.video_recorder import VideoRecorder
 if __name__ == '__main__':
     args = create_parser().parse_args([] if "__file__" not in globals() else None)
     
+    print(args.__dict__)
+    
     def make_env():
         # env = gym.make('CarRacing-v2', render_mode="human")
         env = gym.make('CarRacing-v2', render_mode='rgb_array')
@@ -34,7 +36,8 @@ if __name__ == '__main__':
               entropy_coeff = args.entropy_coeff,
               gamma = args.gamma,
               gae_lambda = args.gae_lambda,
-              learning_rate = args.learning_rate)
+              learning_rate = args.learning_rate,
+              value_fun_coeff = args.vf_coeff)
 
     ppo.load_w('marek_models/car')
 

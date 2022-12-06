@@ -6,6 +6,7 @@ PPO_marek/lr_discount/
 PPO_marek/steps_per_ep/
 PPO_marek/epochs/
 PPO_marek/clip/
+PPO_marek/OLD/
 PPO_marek/__pycache__/
 slurm*
 

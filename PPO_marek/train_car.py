@@ -20,20 +20,21 @@ def main(env, args: argparse.Namespace) -> None:
     
     # create a specific folder for this training (usefull for parallel execution)
     # args.models_dir = create_dir_for_curr_runtime(args.models_dir)
-    args.models_dir = create_subfolder(args.models_dir, f"clip_{args.clip_range}")
+    args.models_dir = create_subfolder(args.models_dir, f"horizon_{args.steps_per_ep}")
 
     ppo = PPO(observation_space = env.observation_space, 
               action_space = env.action_space, 
               entropy_coeff = args.entropy_coeff,
               gamma = args.gamma,
               gae_lambda = args.gae_lambda,
-              learning_rate = args.learning_rate)
+              learning_rate = args.learning_rate,
+              value_fun_coeff = args.vf_coeff)
     
     if args.load_model != "":
         ppo.load_w(args.load_model)
     
     # TODO automate this
-    def lr_schedule(x): return x * args.lr_discount
+    def lr_schedule(x): return x * args.learning_rate
     # def lr_schedule(x): return x
     
     logger = get_logger(args.models_dir, args.tensorboard)

@@ -24,7 +24,7 @@ from utils import save_pltgraph
 
 
 class PPO:
-    def __init__(self, observation_space, action_space, entropy_coeff, gamma, gae_lambda, learning_rate):
+    def __init__(self, observation_space, action_space, entropy_coeff, gamma, gae_lambda, learning_rate, value_fun_coeff):
         self.gamma = gamma
         self.gae_lambda = gae_lambda
         self.model: Model = None
@@ -32,6 +32,7 @@ class PPO:
         self.optim = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         self.entropy_coeff = entropy_coeff
         self.get_pd = self.get_normal_pd
+        self.vf_coeff = value_fun_coeff
         
         print(f"{observation_space = }\n{action_space = }")
 
@@ -71,14 +72,14 @@ class PPO:
         return tf.math.softmax(pi)
 
     @tf.function
-    def get_loss_pi(self, adv, logp, old_logp, clip):
+    def get_loss_policy_clipped(self, adv, logp, old_logp, clip):
         ratio = tf.math.exp(logp-old_logp)
         clipped_adv = tf.clip_by_value(ratio, 1-clip, 1+clip)*adv
         loss_pi = -tf.reduce_mean(tf.minimum(ratio*adv, clipped_adv))
         return loss_pi
 
     @tf.function
-    def get_loss_value(self, pred_value, returns):
+    def get_loss_critic(self, pred_value, returns):
         return tf.reduce_mean((pred_value-returns)**2)
 
     # @tf.function # gives an error
@@ -90,11 +91,12 @@ class PPO:
         with tf.GradientTape() as tape:
             pd, pred_value = self.get_pd(obs)
             logp = pd.log_prob(actions)
-            loss_pi = self.get_loss_pi(adv, logp, old_logp, clip)
-            loss_v = self.get_loss_value(pred_value, returns)
+            loss_pi = self.get_loss_policy_clipped(adv, logp, old_logp, clip)
+            loss_critic = self.get_loss_critic(pred_value, returns)
             entropy = pd.entropy()
 
-            loss = loss_pi+loss_v*0.5-entropy*self.entropy_coeff
+            # TODO try a - b + c (as it is in the PPO paper)
+            loss = loss_pi + loss_critic*self.vf_coeff - entropy*self.entropy_coeff #main loss function of PPO
 
         approxkl = .5 * tf.reduce_mean(tf.square(old_logp-logp))
 
@@ -102,7 +104,7 @@ class PPO:
         grads = tape.gradient(loss, vars)
         grads_and_vars = zip(grads, vars)
         # self.optim.apply_gradients(zip(grads, vars))
-        return grads_and_vars, loss_pi, loss_v, entropy, approxkl
+        return grads_and_vars, loss_pi, loss_critic, entropy, approxkl
 
     @tf.function
     def learn_on_batch(self, lr, cliprange, obs, returns, actions, values, old_logp):
@@ -209,8 +211,11 @@ class PPO:
             mb_values = np.concatenate(mb_values, axis=0)
             mb_logp = np.concatenate(mb_logp, axis=0)
 
-            lr_now = lr(1.0 - e/nepisodes)
-            # lr_now lr(1.0)
+            if args.constant_lr:
+                lr_now = lr(1.0)
+            else:
+                lr_now = lr(1.0 - e/nepisodes)
+                
             self.learn(mb_obs, returns, mb_actions, mb_values, mb_logp,
                        clip_range, lr_now, mb_size, epochs=epochs_per_ep)
             avg_score = np.mean(
