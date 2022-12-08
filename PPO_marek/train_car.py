@@ -20,7 +20,7 @@ def main(env, args: argparse.Namespace) -> None:
     
     # create a specific folder for this training (usefull for parallel execution)
     # args.models_dir = create_dir_for_curr_runtime(args.models_dir)
-    args.models_dir = create_subfolder(args.models_dir, f"horizon_{args.steps_per_ep}")
+    args.models_dir = create_subfolder(args.models_dir, f"lambda_{args.gae_lambda}")
 
     ppo = PPO(observation_space = env.observation_space, 
               action_space = env.action_space, 

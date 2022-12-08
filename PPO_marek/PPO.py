@@ -171,9 +171,11 @@ class PPO:
             
         avg_score_history = []
 
+        step = 0
         for e in range(start_from_ep, nepisodes+1):
             mb_obs, mb_rewards, mb_actions, mb_values, mb_dones, mb_logp = [], [], [], [], [], []
             for _ in range(steps_per_ep):
+                step += 1
                 actions, values, logp = self.act(obs)
                 actions = actions.numpy()
                 values = values.numpy()
@@ -223,7 +225,7 @@ class PPO:
             avg_score_history.append(avg_score)
             
             if e % print_freq == 0:
-                print(f'==> episode: {e}/{nepisodes}, avg score: {avg_score:.3f}')  # , score: {score_history[-10:] if score_history else []}
+                print(f'==> episode: {e}/{nepisodes} step={step}, avg score: {avg_score:.3f}')  # , score: {score_history[-10:] if score_history else []}
                 # print(f"{returns = } len={len(returns)}")
 
             if e % save_interval == 0:
@@ -235,8 +237,9 @@ class PPO:
                 
             if args.tensorboard:
                 with logger.as_default():
-                    tf.summary.scalar('average score', avg_score, step=e)
-                    tf.summary.scalar('learning rate', lr_now, step=e)
+                    tf.summary.scalar('average score', avg_score, step=step)
+                    tf.summary.scalar('learning rate', lr_now, step=step)
+                    tf.summary.scalar('episode', e, step=step)
                 
         # end of all episodes
         self.save_w(os.path.join(model_dir, "FINAL"))
