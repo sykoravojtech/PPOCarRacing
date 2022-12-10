@@ -7,7 +7,10 @@ PPO_marek/lr_discount/
 PPO_marek/steps_per_ep/
 PPO_marek/epochs/
 PPO_marek/clip/
+PPO_marek/clip1/
 PPO_marek/num_envs/
+PPO_marek/entropy_coeff/
+PPO_marek/vf_coeff/
 PPO_marek/gae_lambda/
 PPO_marek/__pycache__/
 slurm*

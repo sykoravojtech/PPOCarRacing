@@ -4,18 +4,18 @@ import json
 def create_parser():
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("-entropy", "--entropy_coeff", default=0.01, type=float, help="Entropy coefficient (c2)") # 0.0
-    parser.add_argument("-vf", "--vf_coeff", default=1, type=float, help="Value function coefficient (c1)") # 0.5 - 1
+    parser.add_argument("-entropy", "-c2", "--entropy_coeff", default=0.01, type=float, help="Entropy coefficient (c2)") # 0.0
+    parser.add_argument("-vf", "-c1", "--vf_coeff", default=1, type=float, help="Value function coefficient (c1)") # 0.5 - 1
     parser.add_argument("-g", "--gamma", default=0.99, type=float, help="Discount factor - gamma.")
-    parser.add_argument("-gae", "--gae_lambda", default=0.95, type=float, help="gae_lambda") # 0.9-1
+    parser.add_argument("-gae", "--gae_lambda", default=0.9, type=float, help="gae_lambda") # 0.9-1
     parser.add_argument("-lr", "--learning_rate", default=2.5e-4, type=float, help="Learning rate - alpha.")
     parser.add_argument("--constant_lr", default=False, action="store_true", help="Constant or discounted learning rate")
     # parser.add_argument("--lr_discount", default=7e-6, type=float, help="Learning rate discount factor")
     parser.add_argument("-t", "--training_episodes", default=4000, type=int, help="Training episodes.")
     parser.add_argument("-s", "-horizon", "--steps_per_ep", default=2250, type=int, help="Steps per episode - since we have multiple envs we don't end when done")
-    parser.add_argument("-b", "--batch_size", default=128, type=int, help="Batch/minibatch size")
+    parser.add_argument("-b", "--batch_size", default=1024, type=int, help="Batch/minibatch size")
     parser.add_argument("-epochs", "--epochs_per_ep", default=3, type=int, help="Number of epochs per episode")
-    parser.add_argument("-clip", "--clip_range", default=0.1, type=float, help="Clip range (1-clip, 1+clip)")
+    parser.add_argument("-clip", "--clip_range", default=0.2, type=float, help="Clip range (1-clip, 1+clip)")
     parser.add_argument("-dir", "--models_dir", default="models/", help="Directory in which all models are saved")
     parser.add_argument("--start_from_ep", default=1, type=int, help="Starting episode number")
     parser.add_argument("--save_every", default=10, type=int, help="Save the model every N episodes. Make a checkpoint.")
