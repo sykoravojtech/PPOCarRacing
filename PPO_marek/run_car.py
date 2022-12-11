@@ -39,23 +39,24 @@ if __name__ == '__main__':
               learning_rate = args.learning_rate,
               value_fun_coeff = args.vf_coeff)
 
-    ppo.load_w('marek_models/car')
-
+    MODEL_PATH = "BEST/ep1330/weights"
+    # ppo.load_w('marek_models/car')
+    ppo.load_w(MODEL_PATH)
     
-    
-    done = False
-    obs, _ = env.reset()
-    step = 0
-    score = 0
-    while not done:        
-        # print(single_env.render())
-        value, mu, sigma = ppo.model(obs)
-        action, _, _ = ppo.act(obs)
-        # print(action, mu, sigma)
-        obs_, reward, terminated, truncated, _ = env.step(action.numpy())
-        done = terminated or truncated
-        score += reward
-        obs = obs_
-        # print(f"{obs=}")
-        step += 1
-    print(f"{score = }")
+    while True:
+        done = False
+        obs, _ = env.reset()
+        step = 0
+        score = 0
+        while not done:        
+            # print(single_env.render())
+            value, mu, sigma = ppo.model(obs)
+            action, _, _ = ppo.act(obs)
+            # print(action, mu, sigma)
+            obs_, reward, terminated, truncated, _ = env.step(action.numpy())
+            done = terminated or truncated
+            score += reward
+            obs = obs_
+            # print(f"{obs=}")
+            step += 1
+        print(f"{score = }")
