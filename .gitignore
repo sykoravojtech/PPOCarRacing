@@ -3,6 +3,7 @@ PPO_marek/batch_size_old/
 PPO_marek/gamma/
 PPO_marek/batch_size/
 PPO_marek/batch_size1/
+PPO_marek/lr_constant/
 PPO_marek/lr_discount/
 PPO_marek/steps_per_ep/
 PPO_marek/epochs/
