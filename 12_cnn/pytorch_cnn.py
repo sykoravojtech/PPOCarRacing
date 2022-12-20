@@ -189,7 +189,7 @@ class TransformedFashionMNIST(torch.utils.data.Dataset):
             x = random.choice(self.transforms)(x)
         return x, rest
 
-def train(network_cls : nn.Module, lr = 0.01, lr_decay = 0.99, epochs = 40, batch_sz = 64, models_dir = "models", num_workers = 8):
+def train(network_cls : nn.Module, lr = 0.01, lr_decay = 0.99, epochs = 40, batch_sz = 64, models_dir = "models", num_workers = 8, load = False):
     print(f"{batch_sz = } {lr = } {lr_decay = } {models_dir = }")
     
     dataset = datasets.FashionMNIST('data', train=True, download=True,
@@ -226,8 +226,13 @@ def train(network_cls : nn.Module, lr = 0.01, lr_decay = 0.99, epochs = 40, batc
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = nn.DataParallel(network_cls.to(device))
+    
+    if load:
+        print("Loading model")
+        model.module.load_state_dict(torch.load("./adam/lr0.001_b512/model.pt"))
+        models_dir = "testing"
 
-    optimizer = optim.SGD(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr, amsgrad=True, weight_decay=0.0)
     
     best_accuracy = 0
     
@@ -235,6 +240,7 @@ def train(network_cls : nn.Module, lr = 0.01, lr_decay = 0.99, epochs = 40, batc
     
     for epoch in range(1, epochs + 1):
         # training
+        
         model.train()
         for i_batch, (x, y) in enumerate(trn_loader):
             x, y = x.to(device), y.to(device)
@@ -269,14 +275,13 @@ def train(network_cls : nn.Module, lr = 0.01, lr_decay = 0.99, epochs = 40, batc
                 f.write(f"accuracy {val_accuracy}")
                 
             if val_accuracy > 0.95:
-                torch.save(model.state_dict(), f"{models_dir}/model_best_{100 * val_accuracy:.2f}.pt")
+                torch.save(model.module.state_dict(), f"{models_dir}/model_best_{100 * val_accuracy:.2f}.pt")
             else:
-                torch.save(model.state_dict(), f"{models_dir}/model.pt")
+                torch.save(model.module.state_dict(), f"{models_dir}/model.pt")
         else:
             print(f'  [VAL] Validation accuracy: {100 * val_accuracy:.2f}% lr={lr}')
             
         # lr *= lr_decay
-    
 
 # -------------------------------------------------------------
 if __name__ == '__main__':  
@@ -290,9 +295,9 @@ if __name__ == '__main__':
     print(f"{num_of_gpus = }")
     
     LR = 0.001
-    BATCH_SIZE = 2048
-    MODELS_DIR = f"models3/lr{LR}_b{BATCH_SIZE}"
-    # MODELS_DIR = "models"
+    BATCH_SIZE = 512
+    MODELS_DIR = f"adam/lr{LR}_b{BATCH_SIZE}"
+    # MODELS_DIR = "testing"
     if not os.path.exists(MODELS_DIR):
         os.makedirs(MODELS_DIR)
     
@@ -303,7 +308,8 @@ if __name__ == '__main__':
         epochs = 5_000_000,
         batch_sz = BATCH_SIZE,
         models_dir = MODELS_DIR,
-        num_workers = 2
+        num_workers = 2,
+        # load = True
         )
     
     # for w in [2,4,6,8,10,12,14,16,18,20]:
