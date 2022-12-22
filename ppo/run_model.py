@@ -4,7 +4,8 @@ from gym.wrappers import RecordVideo
 import numpy as np
 from my_parser import create_parser
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+# Report only TF errors by default
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 from PPO import PPO
 from wrappers import LuminanceWrapper, StackObservation, normalize_obs, BoundAction
 
@@ -45,18 +46,17 @@ if __name__ == '__main__':
     
     while True:
         done = False
-        obs, _ = env.reset()
+        state, _ = env.reset()
         step = 0
         score = 0
         while not done:        
             # print(single_env.render())
-            value, mu, sigma = ppo.model(obs)
-            action, _, _ = ppo.act(obs)
+            value, mu, sigma = ppo.model(state)
+            action, _, _ = ppo.act(state)
             # print(action, mu, sigma)
-            obs_, reward, terminated, truncated, _ = env.step(action.numpy())
+            next_state, reward, terminated, truncated, _ = env.step(action.numpy())
             done = terminated or truncated
             score += reward
-            obs = obs_
-            # print(f"{obs=}")
+            state = next_state
             step += 1
         print(f"{score = }")
