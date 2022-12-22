@@ -51,7 +51,7 @@ class MyNet(nn.Module):
     def __init__(self):
         super(MyNet, self).__init__() 
                
-        self.C1 = myConvBlock(1, 64, kernel_size = 3, stride = 2, padding = 1)
+        self.C1 = myConvBlock(1, 64, kernel_size = 3, stride = 1, padding = 1)
         self.MP1 = nn.MaxPool2d(2)
         
         self.C2 = myConvBlock(64, 128,3,1,1)
@@ -66,15 +66,15 @@ class MyNet(nn.Module):
         self.C9 = myConvBlock(256 + 256, 256,3,1,1) #skip 256 C6, 256 C8
         self.MP3 = nn.MaxPool2d(2)
         
-        self.C10 = myConvBlock(256, 512,3,1,1)
-        self.C11 = myConvBlock(512, 512,3,1,1)
-        self.C12 = myConvBlock(512, 512,3,1,1)
-        self.C13 = myConvBlock(512 + 512, 512,3,1,1) #skip 512 C10, 512 C12
+        # self.C10 = myConvBlock(256, 512,3,1,1)
+        # self.C11 = myConvBlock(512, 512,3,1,1)
+        # self.C12 = myConvBlock(512, 512,3,1,1)
+        # self.C13 = myConvBlock(512 + 512, 512,3,1,1) #skip 512 C10, 512 C12
         # self.MP4 = nn.MaxPool2d(2)
         
         self.flat = nn.Flatten()
         
-        self.L1 = myLinearBlock(512,1024)
+        self.L1 = myLinearBlock(256*9,1024)
         self.L2 = myLinearBlock(1024,512)
         self.L3 = myLinearBlock(512,10)
         
@@ -102,12 +102,12 @@ class MyNet(nn.Module):
         x = self.C9(x)
         x = self.MP3(x)
         
-        x = self.C10(x)
-        skip3 = x
-        x = self.C11(x)
-        x = self.C12(x)
-        x = torch.cat((x, skip3), dim=1)
-        x = self.C13(x)
+        # x = self.C10(x)
+        # skip3 = x
+        # x = self.C11(x)
+        # x = self.C12(x)
+        # x = torch.cat((x, skip3), dim=1)
+        # x = self.C13(x)
         # x = self.MP4(x)
         
         x = self.flat(x)
@@ -160,10 +160,10 @@ def get_model_class(_):
     return [MyNet]
 
 class TransformedFashionMNIST(torch.utils.data.Dataset):
-    def __init__(self, images):
+    def __init__(self, images, num=3):
         super().__init__()
         self.images = images
-        self.num_of_transforms = 3
+        self.num_of_transforms = num
         self.transforms = [
             transforms.RandomCrop(28, padding=4),
             transforms.RandomHorizontalFlip(),
@@ -205,9 +205,10 @@ def train(network_cls : nn.Module, lr = 0.01, lr_decay = 0.99, epochs = 40, batc
                                                                                     val_size,
                                                                                     add_size])
     
-    add_dataset = TransformedFashionMNIST(copy.deepcopy(trn_dataset))
+    # add_dataset = [TransformedFashionMNIST(copy.deepcopy(trn_dataset))]
+    add_dataset = [TransformedFashionMNIST(copy.deepcopy(trn_dataset), random.randint(1,5)) for i in range(15)]
     
-    trn_add_dataset = torch.utils.data.ConcatDataset([trn_dataset, add_dataset])
+    trn_add_dataset = torch.utils.data.ConcatDataset([trn_dataset] + add_dataset)
     print(f"{len(trn_dataset) = } {len(add_dataset) = } {len(trn_add_dataset) = }")
     
     trn_loader = torch.utils.data.DataLoader(trn_add_dataset,
@@ -249,7 +250,7 @@ def train(network_cls : nn.Module, lr = 0.01, lr_decay = 0.99, epochs = 40, batc
             loss = F.nll_loss(net_output, y)
             loss.backward()
             optimizer.step()
-
+            
             if i_batch % 100 == 0:
                 print(f'[TRN] Train epoch: {epoch}, batch: {i_batch}\tLoss: {loss.item():.4f}')
                 
@@ -295,8 +296,8 @@ if __name__ == '__main__':
     print(f"{num_of_gpus = }")
     
     LR = 0.001
-    BATCH_SIZE = 512
-    MODELS_DIR = f"adam/lr{LR}_b{BATCH_SIZE}"
+    BATCH_SIZE = 2048
+    MODELS_DIR = f"big15/lr{LR}_b{BATCH_SIZE}"
     # MODELS_DIR = "testing"
     if not os.path.exists(MODELS_DIR):
         os.makedirs(MODELS_DIR)
