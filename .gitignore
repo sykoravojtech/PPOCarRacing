@@ -15,6 +15,7 @@ ppo/entropy_coeff/
 ppo/vf_coeff/
 ppo/gae_lambda/
 ppo/__pycache__/
+ppo/models/
 slurm*
 
 vojta/

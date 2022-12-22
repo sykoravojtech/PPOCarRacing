@@ -8,7 +8,7 @@ import tensorflow as tf
 
 # My Libraries
 from PPO import PPO
-from wrappers import LuminanceWrapper, StackObservation, normalize_obs, BoundAction
+from wrappers import NormalizeObservation, ClippedAction
 from my_parser import create_parser, save_args
 from utils import *
 
@@ -33,7 +33,6 @@ def main(env, args: argparse.Namespace) -> None:
     if args.load_model != "":
         ppo.load_weights(args.load_model)
     
-    # TODO automate this
     def lr_schedule(x): return x * args.learning_rate
     
     logger = get_logger(args.models_dir, args.tensorboard)
@@ -64,7 +63,7 @@ if __name__ == '__main__':
     args = create_parser().parse_args([] if "__file__" not in globals() else None)
 
     env = gym.vector.make('CarRacing-v2', num_envs=args.num_envs,
-                          wrappers=[normalize_obs, BoundAction])
+                          wrappers=[NormalizeObservation, ClippedAction])
     
     print_info(env, args)
     

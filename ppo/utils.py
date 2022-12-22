@@ -20,7 +20,7 @@ def get_logger(model_dir, tensorboard=False):
 
 def print_info(env, args):
     print("==== ENV INFO ====")
-    print(f"{env.action_space=}\n{env.observation_space=}\n{env.reward_range=}")
+    print(f"{env.action_space=}\n{env.observation_space=}")
     print("==================")
     print("====== ARGS ======")
     print(args.__dict__)
