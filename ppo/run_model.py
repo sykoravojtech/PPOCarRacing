@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     MODEL_PATH = "BEST/ep1330/weights"
     # ppo.load_w('marek_models/car')
-    ppo.load_w(MODEL_PATH)
+    ppo.load_weights(MODEL_PATH)
     
     while True:
         done = False
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         while not done:        
             # print(single_env.render())
             value, mu, sigma = ppo.model(state)
-            action, _, _ = ppo.act(state)
+            action, _, _ = ppo.choose_action(state)
             # print(action, mu, sigma)
             next_state, reward, terminated, truncated, _ = env.step(action.numpy())
             done = terminated or truncated

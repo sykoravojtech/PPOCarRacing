@@ -31,7 +31,7 @@ def main(env, args: argparse.Namespace) -> None:
               value_fun_coeff = args.vf_coeff)
     
     if args.load_model != "":
-        ppo.load_w(args.load_model)
+        ppo.load_weights(args.load_model)
     
     # TODO automate this
     def lr_schedule(x): return x * args.learning_rate
@@ -47,14 +47,14 @@ def main(env, args: argparse.Namespace) -> None:
     
     ppo.train(env = env,
               args = args, 
-              nepisodes = args.training_episodes, 
+              num_of_episodes = args.training_episodes, 
               steps_per_ep = args.steps_per_ep, 
-              mb_size = args.batch_size, 
+              batch_size = args.batch_size, 
               epochs_per_ep = args.epochs_per_ep,
               lr = lr_schedule, 
               clip_range = args.clip_range, 
-              model_dir = args.models_dir, 
-              start_from_ep = args.start_from_ep, 
+              models_dir = args.models_dir, 
+              starting_episode = args.start_from_ep, 
               save_interval = args.save_every,
               print_freq = args.print_ep_info_freq,
               logger = logger)
