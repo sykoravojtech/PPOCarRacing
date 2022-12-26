@@ -1,0 +1,45 @@
+Model: "ActorCriticPPO"
+__________________________________________________________________________________________________
+ Layer (type)                   Output Shape         Param #     Connected to                     
+==================================================================================================
+ input_PPO (InputLayer)         [(None, 96, 96, 3)]  0           []                               
+                                                                                                  
+ CNN_model (Functional)         [(None, 1),          629921      ['input_PPO[0][0]']              
+                                 (None, 512)]                                                     
+                                                                                                  
+ dense_b0 (Dense)               (None, 3)            1539        ['CNN_model[0][1]']              
+                                                                                                  
+ dense_b1 (Dense)               (None, 3)            1539        ['CNN_model[0][1]']              
+                                                                                                  
+ lambda_b0 (Lambda)             (None, 3)            0           ['dense_b0[0][0]']               
+                                                                                                  
+ lambda_b1 (Lambda)             (None, 3)            0           ['dense_b1[0][0]']               
+                                                                                                  
+==================================================================================================
+Total params: 632,999
+Trainable params: 632,999
+Non-trainable params: 0
+__________________________________________________________________________________________________
+Model: "CNN_model"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ input_cnn (InputLayer)      [(None, 96, 96, 3)]       0         
+                                                                 
+ conv2D_1 (Conv2D)           (None, 23, 23, 32)        6176      
+                                                                 
+ conv2D_2 (Conv2D)           (None, 10, 10, 64)        32832     
+                                                                 
+ conv2D_3 (Conv2D)           (None, 4, 4, 64)          65600     
+                                                                 
+ flatten (Flatten)           (None, 1024)              0         
+                                                                 
+ dense_1 (Dense)             (None, 512)               524800    
+                                                                 
+ value_critic (Dense)        (None, 1)                 513       
+                                                                 
+=================================================================
+Total params: 629,921
+Trainable params: 629,921
+Non-trainable params: 0
+_________________________________________________________________
