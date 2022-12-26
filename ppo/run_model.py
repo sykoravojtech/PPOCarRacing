@@ -15,6 +15,7 @@ from utils import print_info
 from gym.wrappers.monitoring.video_recorder import VideoRecorder
 
 RENDER = False
+MODEL_PATH = "BEST/ep1330/weights"
 
 if __name__ == '__main__':
     args = create_parser().parse_args([] if "__file__" not in globals() else None)
@@ -48,7 +49,7 @@ if __name__ == '__main__':
               learning_rate = args.learning_rate,
               value_fun_coeff = args.vf_coeff)
 
-    MODEL_PATH = "BEST/ep1330/weights"
+    
     ppo.load_weights(MODEL_PATH)
     
     ppo.run(

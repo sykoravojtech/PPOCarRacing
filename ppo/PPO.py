@@ -24,7 +24,7 @@ class PPO:
         self.action_space = action_space
         self.optim = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         self.entropy_coeff : float = entropy_coeff
-        self.get_pd = self.get_beta_pd
+        self.get_probdist = self.get_beta_probdist
         self.vf_coeff : float = value_fun_coeff
 
         if len(observation_space.shape) == 4:
@@ -37,6 +37,7 @@ class PPO:
                 f'Unsupported observation space shape {observation_space.shape} ... only 4 is supported')
 
     def save_weights(self, filename='model'):
+        # TODO remake for h5 version where weights are in one file
         self.model.save_weights(filename)
 
     def load_weights(self, filename='model'):
@@ -51,23 +52,19 @@ class PPO:
 
     @tf.function
     def choose_action(self, state):
-        prob_dist, values = self.get_pd(state)
+        prob_dist, values = self.get_probdist(state)
         action = prob_dist.sample()
         return action, values, prob_dist.log_prob(action)
 
     def get_values(self, state):
-        return self.get_pd(state)[1]
+        return self.get_probdist(state)[1]
 
-    def get_beta_pd(self, state):
+    def get_beta_probdist(self, state):
         value, alpha, beta = self.model(state)
         prob_dist = tfp.distributions.Independent(
             tfp.distributions.Beta(alpha, beta),
             reinterpreted_batch_ndims=1)
         return prob_dist, tf.squeeze(value, axis=-1)
-
-    def probas(self, state):
-        value, pi = self.model(state)
-        return tf.math.softmax(pi)
 
     @tf.function
     def get_loss_policy_clipped(self, advantage, logprobs, old_logprobs, clip):
@@ -77,7 +74,7 @@ class PPO:
         return loss_policy
 
     @tf.function
-    def get_loss_critic(self, pred_value, returns):
+    def get_loss_critic_value(self, pred_value, returns):
         return tf.reduce_mean((pred_value - returns)**2)
 
     # @tf.function # gives an error
@@ -88,32 +85,32 @@ class PPO:
                       - tf.reduce_mean(advantages) / (tf.keras.backend.std(advantages) + eps))
 
         with tf.GradientTape() as tape:
-            prob_dist, predicted_vals = self.get_pd(states)
+            prob_dist, predicted_vals = self.get_probdist(states)
             logprobs = prob_dist.log_prob(actions)
             loss_policy_clipped = self.get_loss_policy_clipped(advantages, logprobs, old_logprobs, clip)
-            loss_critic = self.get_loss_critic(predicted_vals, returns)
+            loss_critic_value = self.get_loss_critic_value(predicted_vals, returns)
             entropy = prob_dist.entropy()
 
             # main loss function of PPO
-            loss = loss_policy_clipped + loss_critic*self.vf_coeff - entropy * \
+            loss = loss_policy_clipped + loss_critic_value*self.vf_coeff - entropy * \
                 self.entropy_coeff  
 
         approx_kldiv = 0.5 * tf.reduce_mean(tf.square(old_logprobs-logprobs))
 
         vars = tape.watched_variables()
         grads = tape.gradient(loss, vars)
-        grads_and_vars = zip(grads, vars)
-        return grads_and_vars, loss_policy_clipped, loss_critic, entropy, approx_kldiv
+        
+        return zip(grads, vars), loss_critic_value, loss_policy_clipped, entropy, approx_kldiv
 
     @tf.function
     def learn_on_single_batch(self, clip, lr, states, returns, actions, values, old_logprobs):
         states = tf.keras.backend.cast_to_floatx(states)
-        grads_and_vars, loss_policy, loss_v, entropy, approx_kldiv = self.gradient(
+        grads_and_vars, loss_v, loss_policy_clipped, entropy, approx_kldiv = self.gradient(
             states, actions, returns, values, clip, old_logprobs)
         self.optim.learning_rate = lr
         self.optim.apply_gradients(grads_and_vars)
 
-        return loss_policy, loss_v, entropy, approx_kldiv
+        return loss_policy_clipped, loss_v, entropy, approx_kldiv
 
     def get_returns(self, rewards, values, dones, last_values, last_dones, dtype):
         timesteps = len(rewards)

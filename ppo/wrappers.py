@@ -23,7 +23,6 @@ class NormalizeObservation(ObservationWrapper):
         super().__init__(env)
         low = np.mean(self.observation_space.low)
         high = np.mean(self.observation_space.high)
-        # shape = tuple([1] + list(self.observation_space.shape))
         shape = env.observation_space.shape
         self.observation_space = spaces.Box(low, high, shape=shape, dtype='float32')
 
