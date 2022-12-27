@@ -35,6 +35,8 @@ Open *run_model.py* and change MODEL_PATH to the saved model path and then run:
 
 *python run_model.py*
 
+For the showcase model there is no need to change the MODEL_PATH.
+
 ## How to train a model
 
 Set hyperparameters in *my_parser.py* and run:
