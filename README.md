@@ -14,7 +14,7 @@ This project implemented the Proximal Policy Algorithm (PPO) on the CarRacing-v2
 
 Our ActorCritic Deep Neural Network was as follows:
 
-![cnn_model](ppo/network-structure.jpg)
+![cnn_model](project/network-structure.jpg)
 
 
 ## How to install the environment
