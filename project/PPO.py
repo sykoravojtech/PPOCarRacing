@@ -94,6 +94,10 @@ class PPO:
             # main loss function of PPO
             loss = loss_policy_clipped + loss_critic_value*self.vf_coeff - entropy * \
                 self.entropy_coeff  
+                
+        # with tf.compat.v1.Session() as sess:
+        #     a = tf.print(loss[0], loss_policy_clipped, loss_critic_value*self.vf_coeff, entropy[0] *self.entropy_coeff)
+        #     print(f"\tLOSS = {a}")
 
         approx_kldiv = 0.5 * tf.reduce_mean(tf.square(old_logprobs-logprobs))
 
