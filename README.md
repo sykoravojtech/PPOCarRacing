@@ -4,8 +4,12 @@ Author: Vojtěch Sýkora
 
 ## Project Description
 
+Detailed PDF report can be found [here](project/PPO_CarRacing_project_Sykora.pdf)
+
 **Environment: CarRacing-v2**
 https://www.gymlibrary.dev/environments/box2d/car_racing/
+
+![car_driving](car-driving.gif)
 
 **Algorithm: Proximal Policy Optimization**
 https://arxiv.org/abs/1707.06347
