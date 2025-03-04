@@ -23,24 +23,27 @@ Our ActorCritic Deep Neural Network was as follows:
 
 Install Anaconda Distribution https://www.anaconda.com/products/distribution
 
-*conda env create -f newest.yml*
-
-*conda activate newest*
-
-*python \<filename\>*
+```
+conda env create -f newest.yml
+conda activate newest
+python \<filename\>
+```
 
 ## How to run a saved model
 
-Open *run_model.py* and change MODEL_PATH to the saved model path and then run:
+Open `run_model.py` and change MODEL_PATH to the saved model path and then run:
 
-*python run_model.py*
+```
+python run_model.py
+```
 
 For the showcase model there is no need to change the MODEL_PATH.
 
 ## How to train a model
 
-Set hyperparameters in *my_parser.py* and run:
+Set hyperparameters in `my_parser.py` and run:
+```
+python train_model.py
+```
 
-*python train_model.py*
-
-Models with checkpoints will be save in args.models_dir (in my_parser.py variable models_dir) directory which is by default sewt to "models/".
+Models with checkpoints will be save in `args.models_dir` (in `my_parser.py` variable `models_dir`) directory which is by default set to `models/`.
